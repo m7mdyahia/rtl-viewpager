@@ -1,12 +1,12 @@
 /**
  * Copyright 2016 Duolingo
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,6 +48,7 @@ public class RtlViewPager extends ViewPager {
     public RtlViewPager(Context context) {
         super(context);
     }
+
     public RtlViewPager(Context context, AttributeSet attrs) {
         super(context, attrs);
     }
@@ -55,7 +56,7 @@ public class RtlViewPager extends ViewPager {
     @Override
     public void onRtlPropertiesChanged(int layoutDirection) {
         super.onRtlPropertiesChanged(layoutDirection);
-        int viewCompatLayoutDirection = layoutDirection == View.LAYOUT_DIRECTION_RTL ? ViewCompat.LAYOUT_DIRECTION_RTL : ViewCompat.LAYOUT_DIRECTION_LTR;
+        int viewCompatLayoutDirection = ViewCompat.getLayoutDirection(this) == View.LAYOUT_DIRECTION_RTL ? ViewCompat.LAYOUT_DIRECTION_RTL : ViewCompat.LAYOUT_DIRECTION_LTR;
         if (viewCompatLayoutDirection != mLayoutDirection) {
             PagerAdapter adapter = super.getAdapter();
             int position = 0;
@@ -71,18 +72,18 @@ public class RtlViewPager extends ViewPager {
     }
 
     @Override
+    public PagerAdapter getAdapter() {
+        ReversingAdapter adapter = (ReversingAdapter) super.getAdapter();
+        return adapter == null ? null : adapter.getDelegate();
+    }
+
+    @Override
     public void setAdapter(PagerAdapter adapter) {
         if (adapter != null) {
             adapter = new ReversingAdapter(adapter);
         }
         super.setAdapter(adapter);
         setCurrentItem(0);
-    }
-
-    @Override
-    public PagerAdapter getAdapter() {
-        ReversingAdapter adapter = (ReversingAdapter) super.getAdapter();
-        return adapter == null ? null : adapter.getDelegate();
     }
 
     private boolean isRtl() {
@@ -100,15 +101,6 @@ public class RtlViewPager extends ViewPager {
     }
 
     @Override
-    public void setCurrentItem(int position, boolean smoothScroll) {
-        PagerAdapter adapter = super.getAdapter();
-        if (adapter != null && isRtl()) {
-            position = adapter.getCount() - position - 1;
-        }
-        super.setCurrentItem(position, smoothScroll);
-    }
-
-    @Override
     public void setCurrentItem(int position) {
         PagerAdapter adapter = super.getAdapter();
         if (adapter != null && isRtl()) {
@@ -117,46 +109,13 @@ public class RtlViewPager extends ViewPager {
         super.setCurrentItem(position);
     }
 
-    public static class SavedState implements Parcelable {
-        private final Parcelable mViewPagerSavedState;
-        private final int mLayoutDirection;
-
-        private SavedState(Parcelable viewPagerSavedState, int layoutDirection) {
-            mViewPagerSavedState = viewPagerSavedState;
-            mLayoutDirection = layoutDirection;
+    @Override
+    public void setCurrentItem(int position, boolean smoothScroll) {
+        PagerAdapter adapter = super.getAdapter();
+        if (adapter != null && isRtl()) {
+            position = adapter.getCount() - position - 1;
         }
-
-        private SavedState(Parcel in, ClassLoader loader) {
-            if (loader == null) {
-                loader = getClass().getClassLoader();
-            }
-            mViewPagerSavedState = in.readParcelable(loader);
-            mLayoutDirection = in.readInt();
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            out.writeParcelable(mViewPagerSavedState, flags);
-            out.writeInt(mLayoutDirection);
-        }
-
-        // The `CREATOR` field is used to create the parcelable from a parcel, even though it is never referenced directly.
-        public static final Parcelable.Creator<SavedState> CREATOR  = ParcelableCompat.newCreator(new ParcelableCompatCreatorCallbacks<SavedState>() {
-            @Override
-            public SavedState createFromParcel(Parcel in, ClassLoader loader) {
-                return new SavedState(in, loader);
-            }
-
-            @Override
-            public SavedState[] newArray(int size) {
-                return new SavedState[size];
-            }
-        });
+        super.setCurrentItem(position, smoothScroll);
     }
 
     @Override
@@ -209,6 +168,47 @@ public class RtlViewPager extends ViewPager {
             heightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
         }
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    }
+
+    public static class SavedState implements Parcelable {
+        // The `CREATOR` field is used to create the parcelable from a parcel, even though it is never referenced directly.
+        public static final Parcelable.Creator<SavedState> CREATOR = ParcelableCompat.newCreator(new ParcelableCompatCreatorCallbacks<SavedState>() {
+            @Override
+            public SavedState createFromParcel(Parcel in, ClassLoader loader) {
+                return new SavedState(in, loader);
+            }
+
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        });
+        private final Parcelable mViewPagerSavedState;
+        private final int mLayoutDirection;
+
+        private SavedState(Parcelable viewPagerSavedState, int layoutDirection) {
+            mViewPagerSavedState = viewPagerSavedState;
+            mLayoutDirection = layoutDirection;
+        }
+
+        private SavedState(Parcel in, ClassLoader loader) {
+            if (loader == null) {
+                loader = getClass().getClassLoader();
+            }
+            mViewPagerSavedState = in.readParcelable(loader);
+            mLayoutDirection = in.readInt();
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            out.writeParcelable(mViewPagerSavedState, flags);
+            out.writeInt(mLayoutDirection);
+        }
     }
 
     private class ReversingOnPageChangeListener implements OnPageChangeListener {
